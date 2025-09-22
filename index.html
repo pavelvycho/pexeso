@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Pexeso - 4D po 40 letech</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      margin: 0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: 3em;
+      margin: 20px 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    #controls {
+      margin: 20px;
+    }
+    
+    #timer {
+      font-size: 1.5em;
+      margin: 10px;
+      background: rgba(255,255,255,0.2);
+      padding: 10px 20px;
+      border-radius: 25px;
+      display: inline-block;
+    }
+    
+    #debug {
+      font-size: 1.2em;
+      margin: 10px;
+      background: rgba(255,255,0,0.3);
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    
+    #start-btn {
+      font-size: 1.2em;
+      padding: 12px 24px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+    }
+    
+    #start-btn:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      justify-content: center;
+      margin: 30px auto;
+      max-width: 800px; /* Rozšířeno pro více karet */
+      padding: 0 20px;
+    }
+    
+    .card {
+      width: 120px;
+      height: 120px;
+      cursor: pointer;
+      position: relative;
+      border-radius: 12px;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .card:hover {
+      transform: scale(1.05);
+    }
+    
+    .card.flip {
+      transform: rotateY(180deg);
+    }
+    
+    .card.flip:hover {
+      transform: rotateY(180deg) scale(1.05);
+    }
+    
+    .card .front, .card .back {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .card .front {
+      transform: rotateY(180deg);
+    }
+    
+    .card .front img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .card .back {
+      background: linear-gradient(135deg, #4caf50, #45a049);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3em;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .card .back::before {
+      content: "?";
+    }
+    
+    @keyframes match {
+      0% { transform: rotateY(180deg) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.2); }
+      100% { transform: rotateY(180deg) scale(1); }
+    }
+    
+    .card.matched {
+      animation: match 0.5s ease;
+    }
+
+    /* Stylování pro výherní zprávu */
+    .victory-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .victory-message {
+      background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+      padding: 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      animation: victoryPop 0.5s ease;
+      max-width: 400px;
+    }
+
+    .victory-message h2 {
+      font-size: 2.5em;
+      margin: 0 0 20px 0;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .victory-message p {
+      font-size: 1.3em;
+      margin: 10px 0;
+      color: white;
+    }
+
+    .victory-message .time-result {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      margin: 20px 0;
+    }
+
+    .play-again-btn {
+      font-size: 1.2em;
+      padding: 15px 30px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .play-again-btn:hover {
+      background: #45a049;
+      transform: scale(1.05);
+    }
+
+    @keyframes victoryPop {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎮 Pexeso - 4D po 40 letech</h1>
+  <div id="controls">
+    <button id="start-btn">🎯 Začít hru</button>
+    <div id="timer">⏱️ Čas: 0 s</div>
+    <div id="debug">🎯 Nalezeno: 0 párů</div>
+  </div>
+  <div id="game-board"></div>
+
+  <script>
+    const board = document.getElementById("game-board");
+    const startBtn = document.getElementById("start-btn");
+    const timerDisplay = document.getElementById("timer");
+    const debugDisplay = document.getElementById("debug");
+
+    let cards = [];
+    let firstCard, secondCard;
+    let lockBoard = false;
+    let matchedCount = 0;
+
+    let time = 0;
+    let timerInterval;
+
+    function generateCards() {
+      // Rozšířeno pro více karet - připraveno na 30 karet (15 párů)
+      const bases = [
+        "picture01", "picture02", "picture03", "picture04", "picture05",
+        "picture06", "picture07", "picture08", "picture09", "picture10",
+        "picture11", "picture12", "picture13", "picture14", "picture15"
+        // Až budeš mít více obrázků, jen přidej: "picture16", "picture17", atd.
+      ];
+      
+      let images = [];
+      // Použijeme jen tolik párů, kolik máme k dispozici
+      const availablePairs = Math.min(bases.length, 4); // Zatím 4, později změň na 15
+      
+      for (let i = 0; i < availablePairs; i++) {
+        const name = bases[i];
+        images.push("images/" + name + "a.jpg");
+        images.push("images/" + name + "b.jpg");
+      }
+
+      // Zamícháme karty
+      images.sort(() => Math.random() - 0.5);
+
+      board.innerHTML = "";
+      images.forEach(src => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+          <div class="front">
+            <img src="${src}" alt="">
+          </div>
+          <div class="back"></div>
+        `;
+        card.addEventListener("click", flipCard);
+        board.appendChild(card);
+      });
+
+      cards = document.querySelectorAll(".card");
+      matchedCount = 0; // Reset počítadla!
+      if (debugDisplay) {
+        debugDisplay.textContent = `🎯 Nalezeno: 0 párů z ${cards.length/2}`;
+      }
+      console.log(`Vygenerováno ${cards.length} karet (${availablePairs} párů)`);
+    }
+
+    function flipCard() {
+      if (lockBoard) return;
+      if (this === firstCard) return;
+
+      this.classList.add("flip");
+
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+
+      secondCard = this;
+      checkForMatch();
+    }
+
+    function checkForMatch() {
+      const firstSrc = firstCard.querySelector(".front img").src;
+      const secondSrc = secondCard.querySelector(".front img").src;
+      
+      // Získáme základní názvy bez "a.jpg" nebo "b.jpg"
+      const firstBase = firstSrc.replace(/[ab]\.jpg$/, '');
+      const secondBase = secondSrc.replace(/[ab]\.jpg$/, '');
+      
+      const isMatch = firstBase === secondBase;
+
+      if (isMatch) {
+        disableCards();
+        matchedCount += 2;
+        
+        // Aktualizujeme debug zobrazení (s kontrolou existence)
+        if (debugDisplay) {
+          debugDisplay.textContent = `🎯 Nalezeno: ${matchedCount/2} párů z ${cards.length/2}`;
+        }
+        
+        // Přidáme animaci pro nalezený pár
+        if (firstCard) firstCard.classList.add("matched");
+        if (secondCard) secondCard.classList.add("matched");
+        
+        console.log(`Nalezen pár! Otočeno: ${matchedCount} z ${cards.length} karet`);
+        
+        // Zkontrolujeme výhru
+        if (matchedCount >= cards.length) {
+          clearInterval(timerInterval);
+          console.log("VÝHRA! Všechny karty otočeny!");
+          if (debugDisplay) {
+            debugDisplay.textContent = "🏆 VÝHRA!";
+          }
+          
+          // Zkusíme přímé volání bez setTimeout
+          showVictoryMessage();
+        }
+      } else {
+        unflipCards();
+      }
+    }
+
+    function disableCards() {
+      firstCard.removeEventListener("click", flipCard);
+      secondCard.removeEventListener("click", flipCard);
+      resetBoard();
+    }
+
+    function unflipCards() {
+      lockBoard = true;
+      setTimeout(() => {
+        firstCard.classList.remove("flip");
+        secondCard.classList.remove("flip");
+        resetBoard();
+      }, 1000);
+    }
+
+    function resetBoard() {
+      [firstCard, secondCard] = [null, null];
+      lockBoard = false;
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      time = 0;
+      timerDisplay.textContent = "⏱️ Čas: 0 s";
+      timerInterval = setInterval(() => {
+        time++;
+        timerDisplay.textContent = `⏱️ Čas: ${time} s`;
+      }, 1000);
+    }
+
+    startBtn.addEventListener("click", () => {
+      generateCards();
+      matchedCount = 0;
+      startTimer();
+      startBtn.textContent = "🔄 Nová hra";
+    });
+
+    // Automaticky vygenerujeme karty při načtení
+    generateCards();
+
+    function showVictoryMessage() {
+      console.log("showVictoryMessage() byla zavolána!");
+      
+      const overlay = document.createElement('div');
+      overlay.classList.add('victory-overlay');
+      
+      let timeMessage = '';
+      if (time < 30) {
+        timeMessage = '⚡ Blesková rychlost!';
+      } else if (time < 60) {
+        timeMessage = '🚀 Výborný čas!';
+      } else if (time < 90) {
+        timeMessage = '👍 Dobrá práce!';
+      } else {
+        timeMessage = '🎯 Úspěch!';
+      }
+      
+      overlay.innerHTML = `
+        <div class="victory-message">
+          <h2>🎉 GRATULUJEME! 🎊</h2>
+          <p>${timeMessage}</p>
+          <div class="time-result">⏰ ${time} sekund</div>
+          <p>Našel jsi všechny dvojice!</p>
+          <button class="play-again-btn" onclick="closeVictoryMessage()">
+            🔄 Hrát znovu
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(overlay);
+      console.log("Výherní zpráva byla přidána do stránky!");
+    }
+
+    function closeVictoryMessage() {
+      const overlay = document.querySelector('.victory-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+      // Spustíme novou hru
+      generateCards();
+      matchedCount = 0;
+      startTimer();
+      startBtn.textContent = "🔄 Nová hra";
+    }
+  </script>
+</body>
+</html>
