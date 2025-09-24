@@ -233,13 +233,14 @@
       const bases = [
         "picture01", "picture02", "picture03", "picture04", "picture05",
         "picture06", "picture07", "picture08", "picture09", "picture10",
-        "picture11", "picture12", "picture13", "picture14", "picture15"
+        "picture11", "picture12", "picture13", "picture14", "picture15",
+        "picture16", "picture17", "picture18", "picture19", "picture20"
         // Až budeš mít více obrázků, jen přidej: "picture16", "picture17", atd.
       ];
       
       let images = [];
       // Použijeme jen tolik párů, kolik máme k dispozici
-      const availablePairs = Math.min(bases.length, 8); // Zatím 4, později změň na 15
+      const availablePairs = Math.min(bases.length, 12); // Zatím 4, později změň na 15
       
       for (let i = 0; i < availablePairs; i++) {
         const name = bases[i];
